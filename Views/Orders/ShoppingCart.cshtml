@@ -1,0 +1,129 @@
+﻿@using OnlineTickets.Data.ViewModels
+@model ShoppingCartVM
+
+
+@{
+    ViewData["Tittle"] = "Your shopping card summery";
+}
+
+
+
+<div class="row">
+    <div class="col-8 offset-2">
+        <div class="text-center">
+            <h1>Your Shopping Cart summery</h1>
+        </div>
+
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Selected Amount</th>
+                    <th>Movie</th>
+                    <th>Price</th>
+                    <th>SubTotal</th>
+                    <th></th>
+
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.ShoppingCart.ShoppingCartItems)
+                {
+                    <tr>
+                        <td class="align-middle">
+                            @item.Amount
+                        </td>
+                        <td class="align-middle" >
+                            @item.Movie.Name
+                        </td>
+                        <td class="align-middle">
+                            @item.Movie.Price.ToString("c")
+                        </td>
+                        <td class="align-middle">
+                            @((item.Amount*item.Movie.Price).ToString("c"))
+                        </td>
+
+
+                        <td class="align-middle">
+
+                            <a class="text-danger" asp-controller="Orders" asp-action="RemoveItemFromShoppingCart" asp-route-id="@item.Movie.Id" >
+                                <i class="bi bi-cart4"></i>
+                            </a>
+                            <a class="text-info" asp-controller="Orders" asp-action="AddItemToShoppingCart" asp-route-id="@item.Movie.Id">
+                                <i class="bi bi-cart4"></i>
+                            </a>
+
+
+                        </td>
+                        <td></td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+
+                <tr>
+                    <td colspan="2"></td>
+                    <td> <b>Total:</b> </td>
+                    <td>
+                        @Model.ShoppingCartTotal.ToString("c")
+                    </td>
+                </tr>
+            </tfoot>
+            </table>
+            <div class="text-center">
+                <div class="btn-group">
+               @* <a class="btn btn-outline-primary"  asp-action="CompleteOrder">
+                    CompleteOrder
+                    </a>*@
+                    <div id="paypal-btn"></div>
+                    <a class="btn btn-outline-success" asp-controller="Movies" asp-action="Index">
+                        Add More Items
+                    </a>
+                </div>
+            </div>
+    </div>
+</div>
+
+
+
+@section Scripts{
+
+    <script src="https://www.paypalobjects.com/api/checkout.js"></script>
+
+    <script>
+        let _total = @Html.Raw(Model.ShoppingCartTotal);
+        paypal.Button.render({
+            //Configure environment
+            env: 'sandbox',
+            client: {
+                sandbox: 'AbJDfurNzDa9XRNjbCCJoh_yRzTxD9--w4CHqe4o4NyEN1JMHCSklYatmLCF49UA1QwOaJdkVq6uRoVU'
+            },
+            //Customize button
+            locale: 'en_US',
+            style: {
+                size: 'small',
+                color: 'gold',
+                shape: 'pill'
+            },
+            commit: true,
+            //Set up a payment
+            payment: function (data, actions) {
+                return actions.payment.create({
+                    transactions: [{
+                        amount: {
+                            total: _total,
+                            currency: 'USD'
+                        }
+                    }]
+                });
+            },
+            //Execute the payment
+            onAuthorize: function (data, actions) {
+                return actions.payment.execute().then(function () {
+                    var url = '@Url.Action("CompleteOrder", "Orders", new { })';
+                    window.location.href = url;
+                });
+            }
+        }, '#paypal-btn')
+    </script>
+}
